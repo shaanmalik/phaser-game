@@ -23,13 +23,11 @@ function create() {
     game.physics.startSystem(Phaser.Physics.ARCADE);
 
     game.add.tileSprite(0, 0, 480, 640, 'background');
+
     playerBat = createBat(game.world.centerX, 600);
     computerBat = createBat(game.world.centerX, 20);
-    ball = game.add.sprite(game.world.centerX, game.world.centerY, 'ball');
-    game.physics.arcade.enable(ball);
-    ball.anchor.setTo(0.5, 0.5);
-    ball.body.collideWorldBounds = true;
-    ball.body.bounce.setTo(1, 1);
+    ball = createBall(game.world.centerX, game.world.centerY);
+
     game.input.onDown.add(releaseBall, this);
 }
 
@@ -70,6 +68,16 @@ function createBat(x, y) {
     bat.body.immovable = true;
 
     return bat;
+}
+
+function createBall(x, y) {
+    var ball = game.add.sprite(x, y, 'ball');
+    game.physics.arcade.enable(ball);
+    ball.anchor.setTo(0.5, 0.5);
+    ball.body.collideWorldBounds = true;
+    ball.body.bounce.setTo(1, 1);
+
+    return ball;
 }
 
 function releaseBall() {

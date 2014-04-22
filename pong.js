@@ -6,15 +6,15 @@ var game = new Phaser.Game(
     {preload: preload, create: create, update: update}
 );
 
-var playerBet;
-var computerBet;
+var playerBat;
+var computerBat;
 var ball;
-var computerBetSpeed = 190;
+var computerBatSpeed = 190;
 var ballSpeed = 300;
 var ballReleased = false;
 
 function preload() {
-    game.load.image('bet', 'assets/bet.png');
+    game.load.image('bat', 'assets/bat.png');
     game.load.image('ball', 'assets/ball.png');
     game.load.image('background', 'assets/background.jpg');
 }
@@ -23,8 +23,8 @@ function create() {
     game.physics.startSystem(Phaser.Physics.ARCADE);
 
     game.add.tileSprite(0, 0, 480, 640, 'background');
-    playerBet = createBet(game.world.centerX, 600);
-    computerBet = createBet(game.world.centerX, 20);
+    playerBat = createBat(game.world.centerX, 600);
+    computerBat = createBat(game.world.centerX, 20);
     ball = game.add.sprite(game.world.centerX, game.world.centerY, 'ball');
     game.physics.arcade.enable(ball);
     ball.anchor.setTo(0.5, 0.5);
@@ -35,41 +35,41 @@ function create() {
 
 function update () {
     //Control the player's racket
-    playerBet.x = game.input.x;
-    var playerBetHalfWidth = playerBet.width / 2;
-    if (playerBet.x < playerBetHalfWidth) {
-        playerBet.x = playerBetHalfWidth;
-    } else if (playerBet.x > game.width - playerBetHalfWidth) {
-        playerBet.x = game.width - playerBetHalfWidth;
+    playerBat.x = game.input.x;
+    var playerBatHalfWidth = playerBat.width / 2;
+    if (playerBat.x < playerBatHalfWidth) {
+        playerBat.x = playerBatHalfWidth;
+    } else if (playerBat.x > game.width - playerBatHalfWidth) {
+        playerBat.x = game.width - playerBatHalfWidth;
     }
 
     //Control the computer's racket
-    if(computerBet.x - ball.x < -15) {
-        computerBet.body.velocity.x = computerBetSpeed;
-    } else if(computerBet.x - ball.x > 15) {
-        computerBet.body.velocity.x = -computerBetSpeed;
+    if(computerBat.x - ball.x < -15) {
+        computerBat.body.velocity.x = computerBatSpeed;
+    } else if(computerBat.x - ball.x > 15) {
+        computerBat.body.velocity.x = -computerBatSpeed;
     } else {
-        computerBet.body.velocity.x = 0;
+        computerBat.body.velocity.x = 0;
     }
 
     //Check and process the collision ball and racket
-    game.physics.arcade.collide(ball, playerBet, ballHitsBet, null, this);
-    game.physics.arcade.collide(ball, computerBet, ballHitsBet, null, this);
+    game.physics.arcade.collide(ball, playerBat, ballHitsBat, null, this);
+    game.physics.arcade.collide(ball, computerBat, ballHitsBat, null, this);
 
     //Check to see if someone has scored a goal
     checkGoal();
 }
 
-function createBet(x, y) {
-    var bet = game.add.sprite(x, y, 'bet');
-    bet.anchor.setTo(0.5, 0.5);
+function createBat(x, y) {
+    var bat = game.add.sprite(x, y, 'bat');
+    bat.anchor.setTo(0.5, 0.5);
 
-    game.physics.arcade.enable(bet);
-    bet.body.collideWorldBounds = true;
-    bet.body.bounce.setTo(1, 1);
-    bet.body.immovable = true;
+    game.physics.arcade.enable(bat);
+    bat.body.collideWorldBounds = true;
+    bat.body.bounce.setTo(1, 1);
+    bat.body.immovable = true;
 
-    return bet;
+    return bat;
 }
 
 function releaseBall() {
@@ -80,19 +80,19 @@ function releaseBall() {
     }
 }
 
-function ballHitsBet (_ball, _bet) {
+function ballHitsBat (_ball, _bat) {
     var diff = 0;
 
-    if (_ball.x < _bet.x) {
+    if (_ball.x < _bat.x) {
         //If ball is in the left hand side on the racket
-        diff = _bet.x - _ball.x;
+        diff = _bat.x - _ball.x;
         _ball.body.velocity.x = (-10 * diff);
-    } else if (_ball.x > _bet.x) {
+    } else if (_ball.x > _bat.x) {
         //If ball is in the right hand side on the racket
-        diff = _ball.x -_bet.x;
+        diff = _ball.x -_bat.x;
         _ball.body.velocity.x = (10 * diff);
     } else {
-        //The ball hit the center of the racket, let's add a little bit of a tragic accident(random) of his movement
+        //The ball hit the center of the racket, let's add a little bit of a tragic accident (random) of his movement
         _ball.body.velocity.x = 2 + Math.random() * 8;
     }
 }

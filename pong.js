@@ -31,7 +31,7 @@ function create() {
     game.input.onDown.add(releaseBall, this);
 }
 
-function update () {
+function update() {
     //Control the player's racket
     playerBat.x = game.input.x;
     var playerBatHalfWidth = playerBat.width / 2;
@@ -88,7 +88,7 @@ function releaseBall() {
     }
 }
 
-function ballHitsBat (_ball, _bat) {
+function ballHitsBat(_ball, _bat) {
     var diff = 0;
 
     if (_ball.x < _bat.x) {

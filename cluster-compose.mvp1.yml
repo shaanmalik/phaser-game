@@ -1,0 +1,2950 @@
+configs: {}
+services:
+  active-mq:
+    container_name: active-mq
+    deploy:
+      resources:
+        limits:
+          memory: 953MB
+    environment: {}
+    image: webcenter/activemq:5.13.2
+    ports:
+    - 8161:8161
+    - 61616:61616
+  after-maintenance-pinger:
+    container_name: after-maintenance-pinger
+    deploy:
+      resources:
+        limits:
+          memory: 19MB
+    environment:
+      BODY: '{"currency":"GBP","type":"AFTER_MAINTENANCE"}'
+      METHOD: PUT
+      TARGET_URL: http://rate:8080/payments/v1/rate/private/foreignexchange/maintenance
+      TIME: '23:30:00'
+      TIMEZONE: Europe/London
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/pinger:0.7.0
+    labels:
+      cf_hook: composeformation.hooks.rewrite_private_registry
+      legacy_cpu_shares: 128
+    links:
+    - rate
+  after-weekend-pinger:
+    container_name: after-weekend-pinger
+    deploy:
+      resources:
+        limits:
+          memory: 19MB
+    environment:
+      BODY: '{"currency":"GBP","type":"AFTER_WEEKEND"}'
+      METHOD: PUT
+      TARGET_URL: http://rate:8080/payments/v1/rate/private/foreignexchange/maintenance
+      TIME: 07:15:00
+      TIMEZONE: Europe/London
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/pinger:0.7.0
+    labels:
+      cf_hook: composeformation.hooks.rewrite_private_registry
+      legacy_cpu_shares: 128
+    links:
+    - rate
+  apicoordinator:
+    container_name: apicoordinator
+    deploy:
+      resources:
+        limits:
+          memory: 1500MB
+    environment:
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      AWS: 'true'
+      CREATE_NEW_QUOTE: 'true'
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      FETCH_NEW_QUOTE: 'true'
+      JAVA_TOOL_OPTIONS: -Xdebug -agentlib:jdwp=transport=dt_socket,address=9999,server=y,suspend=n -Xms512m -Xmx512m -verbose:gc
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      MASK_SENSITIVE_DATA: 'FALSE'
+      ROOT_CA_SAM: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tDQpNSUlFQ3pDQ0F2T2dBd0lCQWdJSkFML0QxRjUrVHh2Nk1BMEdDU3FHU0liM0RRRUJDd1VBTUdBeEN6QUpCZ05WDQpCQVlUQWt0U01STXdFUVlEVlFRSEV3cFRkWGR2YmlCamFYUjVNUmN3RlFZRFZRUUxFdzVUWVcxemRXNW5JRTF2DQpZbWxzWlRFak1DRUdBMVVFQXhNYVEwVlNWQzVEUVMxVFJDMVNUMDlVTGtGVlZDQW9kR1Z6ZENrd0lCY05NVGd4DQpNREE0TVRRd01qUXdXaGdQTWpFeE9EQTVNVFF4TkRBeU5EQmFNR0F4Q3pBSkJnTlZCQVlUQWt0U01STXdFUVlEDQpWUVFIRXdwVGRYZHZiaUJqYVhSNU1SY3dGUVlEVlFRTEV3NVRZVzF6ZFc1bklFMXZZbWxzWlRFak1DRUdBMVVFDQpBeE1hUTBWU1ZDNURRUzFUUkMxU1QwOVVMa0ZWVkNBb2RHVnpkQ2t3Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBDQpBNElCRHdBd2dnRUtBb0lCQVFDMCtJVTBhamNCSHZVODFSeFJ1SVJzRkQ5aVkyTFc2UmdzYktGOGlGZ3BYc2grDQpnZDd6VTV2SmJad3BEUU9KNzljeTVxaXYxRXdzc0VzRFpEWGVWT1QyL1FPUVdlOExpemhYM0ZjS1YrVlN0dkl6DQpIYzRqQUR5UklrK1k1TFJuY3k4ajJEMXZhWm9Oek5PNmJweGwrQXZBdjZUbW1vRlBEdVdDUG9seG9qejN3NElLDQpONkxUSFRtT2NpOW9ERXE2S1lkVExxN2FtbHNWaW5oQ1dQdlk1WVpqSi9qQU9talpGam1QRktoL0tGeHVnRHpLDQovMGNZRGk5cDh5Y2Z3TTZrSE1JN3VlaDdpNGtJVlNpWG4xK3dFT2FBQUQzMFV2VHFQM0s3S0kxQktleko4N1ZJDQpFNUN1WEwvbEV0MlVLdjZuL2hxSW85V2UwVWlLVzgxZVBNUnFJWDFOQWdNQkFBR2pnY1V3Z2NJd0hRWURWUjBPDQpCQllFRkVFZDd0TFdwYnVRZW9RTE03YVNCdzNHNmI4NE1JR1NCZ05WSFNNRWdZb3dnWWVBRkVFZDd0TFdwYnVRDQplb1FMTTdhU0J3M0c2Yjg0b1dTa1lqQmdNUXN3Q1FZRFZRUUdFd0pMVWpFVE1CRUdBMVVFQnhNS1UzVjNiMjRnDQpZMmwwZVRFWE1CVUdBMVVFQ3hNT1UyRnRjM1Z1WnlCTmIySnBiR1V4SXpBaEJnTlZCQU1UR2tORlVsUXVRMEV0DQpVMFF0VWs5UFZDNUJWVlFnS0hSbGMzUXBnZ2tBdjhQVVhuNVBHL293REFZRFZSMFRCQVV3QXdFQi96QU5CZ2txDQpoa2lHOXcwQkFRc0ZBQU9DQVFFQU9YYnAxeVVYZFdPWGlLVkdlRDVocU9RRlBCN1FHcFRyYzd2TUg2RFVtaTlWDQpvWUdkdkpRWUlpdEY0dTV6M3orNzBramY3YnFhcHRsVnhyR2YvcjdEOTV2U29naUYxZklHRmtnd1B2bjEyVVlzDQpBOTk1K0YwL2JLdU9LSEFaSVhDNklKRkV5UE55R2s5Y0g2UWtCR0RLNVU0YXRaL1NZVzRTK0xLcUtaa2RnSSt0DQpXWUwwdlNiYS9mVHR2TmhkMGFyWlhjVUhvNml1MWxFTnAxdGtmSkhFK0liTUlwUDhZcDBuYjJYOVowSlppV2xBDQptUHVsMTlHWEZYS0hpMjl5Y1MwQUpEZjdEMG9wV1oxVGJJTm9ySnR2Yjh6MnhMVEcxSHFrczFWQ1RCN0pFZktWDQpVQmJobVJuMUFqK2RGZDhGVWpTek5mM3lxbmV3WWp5Qk1aNFRQN1JpU0E9PQ0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQ0K
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      USE_WIRE_MOCK: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/apicoordinator:1.71.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      com.travelex.platform_compose.jvm.xmx_auto: 'true'
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8120/v2/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: a90228ee-4507-4fd7-ae32-51e5149e31f2
+    ports:
+    - 8120:8080
+    - 8520:8443
+    - 9920:9920
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  audit:
+    container_name: audit
+    depends_on:
+    - audit-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      JETTY_MAX_THREADS: '15'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - active-mq
+    - elastic-mq
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/audit:0.59.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8091/core/v1/audit/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: 4fd9d074-4f08-4b41-b907-45943d67eb2c
+    ports:
+    - 8091:8080
+    - 8491:8443
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  audit-migrations:
+    container_name: audit-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 190MB
+    environment:
+      DB_PORT_5432_TCP_PORT: '5432'
+      POSTGRES_DB: payments
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+      _JAVA_OPTIONS: -Xms128m -Xmx128m
+    external_links:
+    - payments-db
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/audit-migrations:0.59.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      vault_app_id: de9bedc3-d44b-411f-8122-150f97e4af3f
+  bank:
+    container_name: bank
+    depends_on:
+    - bank-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 640MB
+    environment:
+      AUTHENTICATION_AWS_COGNITO_PUBLIC_KEY_URL: https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_9RqcN2oJa/.well-known/jwks.json
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      BANK_TRANSFER_EMAIL_RECEIVERS: banktransfer@travelex.io
+      BANK_TRANSFER_EMAIL_SENDER: banktransfer@travelex.io
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - vault
+    - active-mq
+    - elastic-mq
+    - payments-db
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/bank:0.55.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_healthcheck: HTTP:8103/payments/v1/bank/health
+      vault_app_id: ab316207-aa50-4c69-8b6f-62bb333e9ad0
+    ports:
+    - 8103:8080
+    - 8503:8443
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  bank-migrations:
+    container_name: bank-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 190MB
+    environment:
+      DB_PORT_5432_TCP_PORT: '5432'
+      POSTGRES_DB: payments
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+      _JAVA_OPTIONS: -Xms128m -Xmx128m
+    external_links:
+    - payments-db
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/bank-migrations:0.55.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      vault_app_id: 325d4d66-32ad-4b70-856a-538592cba1f0
+  before-maintenance-pinger:
+    container_name: before-maintenance-pinger
+    deploy:
+      resources:
+        limits:
+          memory: 19MB
+    environment:
+      BODY: '{"currency":"GBP","type":"BEFORE_MAINTENANCE"}'
+      METHOD: PUT
+      TARGET_URL: http://rate:8080/payments/v1/rate/private/foreignexchange/maintenance
+      TIME: '22:00:00'
+      TIMEZONE: Europe/London
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/pinger:0.7.0
+    labels:
+      cf_hook: composeformation.hooks.rewrite_private_registry
+      legacy_cpu_shares: 128
+    links:
+    - rate
+  beneficiary:
+    container_name: beneficiary
+    depends_on:
+    - beneficiary-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AUTHENTICATION_AWS_COGNITO_PUBLIC_KEY_URL: https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_9RqcN2oJa/.well-known/jwks.json
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      BANK_CHECK_PARTNERS: ''
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 512m
+      JVM_MIN_HEAP: 256m
+      PEP_CHECK_PARTNERS: US-WBK,GB-TX
+      S3_AWS_BUCKET_NAME: ''
+      SANCTION_CHECK_PARTNERS: US-WBK,GB-TX
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - active-mq
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/beneficiary:0.149.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_healthcheck: HTTP:8081/payments/v1/beneficiary/health
+      vault_app_id: f19f70bd-959e-40f1-a746-02e82f265e60
+    links:
+    - user
+    ports:
+    - 8081:8080
+    - 8481:8443
+  beneficiary-migrations:
+    container_name: beneficiary-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 381MB
+    environment:
+      DB_PORT_5432_TCP_PORT: '5432'
+      POSTGRES_DB: payments
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+      _JAVA_OPTIONS: -Xms128m -Xmx128m
+    external_links:
+    - payments-db
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/beneficiary-migrations:0.149.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      vault_app_id: 5bbe6b95-8c61-444c-bd7e-48d137d7ae06
+  booking:
+    container_name: booking
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      AWS: 'false'
+      CASH_BOOKING_STATUS_POLL: '3'
+      CFX_AUD_ACCOUNT_ID: '640252538000011011'
+      CFX_AUD_DELIVERY_METHOD: C
+      CFX_SETTLEMENT_CURRENCY: CAD
+      CFX_USD_ACCOUNT_ID: '640252538000011002'
+      CFX_USD_DELIVERY_METHOD: C
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_BOOKING_STATUS_UPDATE: local-booking-status-update-queue
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CC_BOOKING: travelex-event-cc-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      EVENT_QUEUE_TRANSFER: local-transfer-queue
+      FIXED_ORDER_BOOKING_RESPONSE_QUEUE: local-fixedorder-booking-response-queue
+      INVALID_PAYMENT_DATE_QUEUE: local-booking-unbookable-window-queue
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      RIA_KEY_STORE_LOCATION: secret/e2ee/ria/rest/keystore
+      RIA_PASS_PHRASE_LOCATION: secret/e2ee/ria/rest/passPhrase
+      RIA_SUBSCRIPTION_KEY_LOCATION: secret/e2ee/ria/rest/subscriptionKey
+      RIA_URL: https://rialinkgatewaystaging.riaenvia.net
+      RIA_US_AGENT_ID: '70957211'
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      TRANSFER_BOOKING_RESPONSE_QUEUE: local-transfer-booking-response-queue
+      USE_CC_MOCK: 'true'
+      USE_CFX_MOCK: 'true'
+      USE_MOCK_SERVICES: 'true'
+      USE_RIA_MOCK: 'true'
+      USE_UAEX_MOCK: 'true'
+      USE_WIRE_MOCK: 'false'
+      USE_XM_MOCK: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+      XM_AUTHORIZATION_CODE: '123456'
+      XM_PAYMENT_MODE: CC
+      XM_SOURCE_OF_INCOME: S08
+      XM_URL: https://ws.xpressmoney.biz/XMWS/services/XMSSendTxnService
+    external_links:
+    - active-mq
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/booking:0.99.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8077/v2/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: cc80252a-4bf8-42a7-8d2e-c22af1a3b029
+    ports:
+    - 8077:8080
+    - 8471:8443
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  content:
+    container_name: content
+    depends_on:
+    - content-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AUTHENTICATION_AWS_COGNITO_PUBLIC_KEY_URL: https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_9RqcN2oJa/.well-known/jwks.json
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - active-mq
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/content:0.60.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_healthcheck: HTTP:8092/core/v1/content/health
+      vault_app_id: bbb74b86-ddcf-4ec1-ba20-0c6f5b423143
+    ports:
+    - 8092:8080
+    - 8492:8443
+  content-migrations:
+    container_name: content-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 476MB
+    environment:
+      DB_PORT_5432_TCP_PORT: '5432'
+      POSTGRES_DB: payments
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+      _JAVA_OPTIONS: -Xms128m -Xmx128m
+    external_links:
+    - payments-db
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/content-migrations:0.60.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      vault_app_id: 2420e4b1-cc36-4b08-8a65-21948e25aff0
+  corridor:
+    container_name: corridor
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      ECS_ENVIRONMENT: local
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      JAVA_TOOL_OPTIONS: -Xms256m -Xmx256m
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      USE_CURRENCY_MIN_LIMIT: 'true'
+      USE_CURRENCY_MIN_LIMIT_VALUE: '50'
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/corridor:0.40.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8111/v1/corridor/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: fcc883e6-4e4f-42ec-9945-e7f7f6860af3
+    ports:
+    - 8111:8080
+    - 8500:8443
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  country:
+    container_name: country
+    depends_on:
+    - country-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 640MB
+    environment:
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/country:0.30.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_healthcheck: HTTP:8082/payments/v1/country/health
+      vault_app_id: e0ffcd26-a814-40d9-bb26-e2e81fc978e9
+    ports:
+    - 8082:8080
+    - 8482:8443
+  country-migrations:
+    container_name: country-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 190MB
+    environment:
+      DB_PORT_5432_TCP_PORT: '5432'
+      POSTGRES_DB: payments
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+      _JAVA_OPTIONS: -Xms128m -Xmx128m
+    external_links:
+    - payments-db
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/country-migrations:0.30.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      vault_app_id: 9b524d4b-90a8-46d4-ae79-3101941812de
+  currency:
+    container_name: currency
+    depends_on:
+    - currency-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/currency:0.56.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8083/payments/v1/currency/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: 03785786-1ae4-4f35-97c0-c042fdfa75d7
+    ports:
+    - 8083:8080
+    - 8483:8443
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  currency-migrations:
+    container_name: currency-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 286MB
+    environment:
+      DB_PORT_5432_TCP_PORT: '5432'
+      POSTGRES_DB: payments
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+      _JAVA_OPTIONS: -Xms128m -Xmx128m
+    external_links:
+    - payments-db
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/currency-migrations:0.56.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      vault_app_id: 2b6d287e-11cc-4140-a7ce-8902b02e6fdd
+  customer:
+    container_name: customer
+    depends_on:
+    - customer-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - active-mq
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/customer:0.82.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_healthcheck: HTTP:8093/core/v1/customer/health
+      vault_app_id: a6a41f2a-bf4a-4e60-9082-d37608016f05
+    links:
+    - user
+    - content
+    ports:
+    - 8093:8080
+    - 8493:8443
+  customer-migrations:
+    container_name: customer-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 286MB
+    environment:
+      DB_PORT_5432_TCP_PORT: '5432'
+      POSTGRES_DB: payments
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+      _JAVA_OPTIONS: -Xms128m -Xmx128m
+    external_links:
+    - payments-db
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/customer-migrations:0.82.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      vault_app_id: 6a1cf588-2abc-4934-a0e2-a735a8b99646
+  document:
+    container_name: document
+    deploy:
+      resources:
+        limits:
+          memory: 2050MB
+    environment:
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      AWS: 'false'
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      DOMAIN_NAME: http://localhost:8126
+      ECS_ENVIRONMENT: local
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      JAVA_TOOL_OPTIONS: -Xms256m -Xmx256m
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      ROOT_CA_SAM: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tDQpNSUlFQ3pDQ0F2T2dBd0lCQWdJSkFML0QxRjUrVHh2Nk1BMEdDU3FHU0liM0RRRUJDd1VBTUdBeEN6QUpCZ05WDQpCQVlUQWt0U01STXdFUVlEVlFRSEV3cFRkWGR2YmlCamFYUjVNUmN3RlFZRFZRUUxFdzVUWVcxemRXNW5JRTF2DQpZbWxzWlRFak1DRUdBMVVFQXhNYVEwVlNWQzVEUVMxVFJDMVNUMDlVTGtGVlZDQW9kR1Z6ZENrd0lCY05NVGd4DQpNREE0TVRRd01qUXdXaGdQTWpFeE9EQTVNVFF4TkRBeU5EQmFNR0F4Q3pBSkJnTlZCQVlUQWt0U01STXdFUVlEDQpWUVFIRXdwVGRYZHZiaUJqYVhSNU1SY3dGUVlEVlFRTEV3NVRZVzF6ZFc1bklFMXZZbWxzWlRFak1DRUdBMVVFDQpBeE1hUTBWU1ZDNURRUzFUUkMxU1QwOVVMa0ZWVkNBb2RHVnpkQ2t3Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBDQpBNElCRHdBd2dnRUtBb0lCQVFDMCtJVTBhamNCSHZVODFSeFJ1SVJzRkQ5aVkyTFc2UmdzYktGOGlGZ3BYc2grDQpnZDd6VTV2SmJad3BEUU9KNzljeTVxaXYxRXdzc0VzRFpEWGVWT1QyL1FPUVdlOExpemhYM0ZjS1YrVlN0dkl6DQpIYzRqQUR5UklrK1k1TFJuY3k4ajJEMXZhWm9Oek5PNmJweGwrQXZBdjZUbW1vRlBEdVdDUG9seG9qejN3NElLDQpONkxUSFRtT2NpOW9ERXE2S1lkVExxN2FtbHNWaW5oQ1dQdlk1WVpqSi9qQU9talpGam1QRktoL0tGeHVnRHpLDQovMGNZRGk5cDh5Y2Z3TTZrSE1JN3VlaDdpNGtJVlNpWG4xK3dFT2FBQUQzMFV2VHFQM0s3S0kxQktleko4N1ZJDQpFNUN1WEwvbEV0MlVLdjZuL2hxSW85V2UwVWlLVzgxZVBNUnFJWDFOQWdNQkFBR2pnY1V3Z2NJd0hRWURWUjBPDQpCQllFRkVFZDd0TFdwYnVRZW9RTE03YVNCdzNHNmI4NE1JR1NCZ05WSFNNRWdZb3dnWWVBRkVFZDd0TFdwYnVRDQplb1FMTTdhU0J3M0c2Yjg0b1dTa1lqQmdNUXN3Q1FZRFZRUUdFd0pMVWpFVE1CRUdBMVVFQnhNS1UzVjNiMjRnDQpZMmwwZVRFWE1CVUdBMVVFQ3hNT1UyRnRjM1Z1WnlCTmIySnBiR1V4SXpBaEJnTlZCQU1UR2tORlVsUXVRMEV0DQpVMFF0VWs5UFZDNUJWVlFnS0hSbGMzUXBnZ2tBdjhQVVhuNVBHL293REFZRFZSMFRCQVV3QXdFQi96QU5CZ2txDQpoa2lHOXcwQkFRc0ZBQU9DQVFFQU9YYnAxeVVYZFdPWGlLVkdlRDVocU9RRlBCN1FHcFRyYzd2TUg2RFVtaTlWDQpvWUdkdkpRWUlpdEY0dTV6M3orNzBramY3YnFhcHRsVnhyR2YvcjdEOTV2U29naUYxZklHRmtnd1B2bjEyVVlzDQpBOTk1K0YwL2JLdU9LSEFaSVhDNklKRkV5UE55R2s5Y0g2UWtCR0RLNVU0YXRaL1NZVzRTK0xLcUtaa2RnSSt0DQpXWUwwdlNiYS9mVHR2TmhkMGFyWlhjVUhvNml1MWxFTnAxdGtmSkhFK0liTUlwUDhZcDBuYjJYOVowSlppV2xBDQptUHVsMTlHWEZYS0hpMjl5Y1MwQUpEZjdEMG9wV1oxVGJJTm9ySnR2Yjh6MnhMVEcxSHFrczFWQ1RCN0pFZktWDQpVQmJobVJuMUFqK2RGZDhGVWpTek5mM3lxbmV3WWp5Qk1aNFRQN1JpU0E9PQ0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQ0K
+      S3_AWS_BUCKET_NAME: local-jms-upload-bucket
+      S3_AWS_KMS_KEY_ID: s3-default
+      S3_ENABLED: 'true'
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - elastic-mq
+    - payments-db
+    - vault
+    - s3
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/document:0.35.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8126/v2/document/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: 916cc68c-6641-4c04-a822-969ee596d51a
+    ports:
+    - 8126:8080
+    - 8526:8443
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  duedil:
+    container_name: duedil
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/duedil:0.45.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_healthcheck: HTTP:8107/core/v1/duedil/health
+      vault_app_id: 9b806fd3-fbc1-4010-b2c4-a01fa669ea38
+    ports:
+    - 8107:8080
+    - 8507:8443
+  elastic-mq:
+    container_name: elastic-mq
+    deploy:
+      resources:
+        limits:
+          memory: 953MB
+    environment: {}
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/elasticmq:0.49.0-SNAPSHOT
+    ports:
+    - 9324:9324
+  email:
+    container_name: email
+    deploy:
+      resources:
+        limits:
+          memory: 640MB
+    environment:
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - active-mq
+    - elastic-mq
+    - mock-smtp
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/email:0.29.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8089/core/v1/email/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: 5691d5a6-1af1-492a-ae39-9950a0c75f9d
+    ports:
+    - 8089:8080
+    - 8488:8443
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  fixedorder:
+    container_name: fixedorder
+    depends_on:
+    - fixedorder-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AUTHENTICATION_AWS_COGNITO_PUBLIC_KEY_URL: https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_9RqcN2oJa/.well-known/jwks.json
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      BOOKING_REQUEST_QUEUE: local-transfer-queue
+      CC_EMAIL_NO_REPLY_SENDER: no-reply@testing.digital.travelex.net
+      CC_EMAIL_RECEIVER: ccreportupload@travelex.io
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CC_BOOKING: travelex-event-cc-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      EVENT_S3_SFTP_QUEUE: testing-s3-sftp-queue
+      FIXED_ORDER_BOOKING_RESPONSE_QUEUE: local-fixedorder-booking-response-queue
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      S3_AWS_BUCKET_NAME: ''
+      S3_SFTP_BUCKET_NAME: testing-s3-sftp-bucket
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - active-mq
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/fixedorder:0.95.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_healthcheck: HTTP:8106/core/v1/fixedorder/health
+      vault_app_id: 02fcd7b0-0986-11e7-93ae-92361f002671
+    links:
+    - currency
+    - rate
+    - fund
+    - user
+    ports:
+    - 8106:8080
+    - 8406:8443
+  fixedorder-migrations:
+    container_name: fixedorder-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 190MB
+    environment:
+      DB_PORT_5432_TCP_PORT: '5432'
+      POSTGRES_DB: payments
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+      _JAVA_OPTIONS: -Xms128m -Xmx128m
+    external_links:
+    - payments-db
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/fixedorder-migrations:0.95.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      vault_app_id: 02fcda4e-0986-11e7-93ae-92361f002671
+  fraud:
+    container_name: fraud
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      ARIC_URL: http://localhost:8989
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      AWS: 'false'
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      DOMAIN_NAME: http://localhost:8127
+      ECS_ENVIRONMENT: local
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      JAVA_TOOL_OPTIONS: -Xms256m -Xmx256m
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      USE_ARIC_MOCK: 'true'
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/fraud:1.36.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8127/v2/fraud/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: d3daf5f8-05b9-480f-9623-8b99c6a2312d
+    links:
+    - user
+    ports:
+    - 8127:8080
+    - 8527:8443
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  fund:
+    container_name: fund
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AUTHENTICATION_URL: https://localhost:8104/
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      CYBS_API_VERSION: '1.157'
+      CYBS_API_VERSION_ICS: '1.148'
+      CYBS_AVS_DECLINE_FLAGS: B C E F G H I K N O R S T U 1 2 4 5
+      CYBS_JWT_API_ID: 5cbf7f080e423d135c16fdd1
+      CYBS_JWT_EXPIRATION: '7200000'
+      CYBS_JWT_ORGANISATION_ID: 565f0aefa3cc0a2b34604a2d
+      CYBS_KEY_ALIAS: travelex_timt
+      CYBS_KEY_ALIAS_ICS: spay_us
+      CYBS_KEY_FILENAME: travelex_timt.p12
+      CYBS_KEY_FILENAME_ICS: spay_us.p12
+      CYBS_KEY_PASSWORD: travelex_timt
+      CYBS_KEY_PASSWORD_ICS: spay_us
+      CYBS_MERCHANT_ID: travelex_timt
+      CYBS_MERCHANT_ID_ICS: spay_us
+      CYBS_MIN_STATEMENT_TIME: 00:00
+      CYBS_SECURITY_DIGEST_ALGORITHM: http://www.w3.org/2000/09/xmldsig#sha1
+      CYBS_SECURITY_SIGNATURE_ALGORITHM: http://www.w3.org/2000/09/xmldsig#rsa-sha1
+      CYBS_SEND_TO_PRODUCTION: 'false'
+      CYBS_SERVER_URL: https://sit.cpsmt.mhshosting.com/travelex/ics/nvp/
+      CYBS_SERVER_URL_ICS: https://ics2wstesta.ic3.com/commerce/1.x/transactionProcessor
+      CYBS_STATEMENT_BASE_URL: https://ebctest.cybersource.com/ebctest
+      CYBS_ZERO_AUTH_AVS_DECLINE_FLAGS: B C E F G H I K N O R S T U 1 2 4 5
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      ECS_ENVIRONMENT: local
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      ENABLE_FLEX_LOGGING: 'false'
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      JAVA_TOOL_OPTIONS: -Xms256m -Xmx1024m
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - elastic-mq
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/fund:1.3.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8085/payments/v1/fund/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: 7b333d9e-58db-4bbf-921d-7429c739559c
+    links:
+    - user
+    ports:
+    - 8085:8080
+    - 8485:8443
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  hook:
+    container_name: hook
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AWS: 'false'
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      ECS_ENVIRONMENT: local
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      JAVA_TOOL_OPTIONS: -Xms256m -Xmx256m
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/hook:0.10.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8125/hook/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: 6c0de14d-7912-441e-aa76-2d771464ebe7
+    ports:
+    - 8125:8080
+    - 8525:8443
+    - 9925:9925
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  kyc:
+    container_name: kyc
+    deploy:
+      resources:
+        limits:
+          memory: 640MB
+    environment:
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      AWS: 'false'
+      CERTIFICATE_KEYSTORE_PASSWORD: pass
+      CROSS_CORE_PID_XML_VERSION: version
+      CROSS_CORE_PRODUCT_OPTION: product
+      CROSS_CORE_REQUEST_TYPE: request
+      CROSS_CORE_SUBSCRIBER_OPERATOR_INITIAL: operator
+      CROSS_CORE_SUBSCRIBER_PREAMBLE: preamble
+      CROSS_CORE_SUBSCRIBER_SUB_CODE: subCode
+      CROSS_CORE_TENANT_ID: tenantId
+      CROSS_CORE_URL: http://localhost:8989
+      CROSS_CORE_USERNAME: user
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      ECS_ENVIRONMENT: local
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      IDHUB_TOKEN_URL: dummy
+      JAVA_TOOL_OPTIONS: -Xms256m -Xmx256m
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_CROSS_CORE_MOCK: 'true'
+      USE_IDHUB_MOCK: 'true'
+      USE_MOCK_SERVICES: 'true'
+      USE_WIRE_MOCK: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+      WIRE_MOCK_FIXED_DELAY: '0'
+    external_links:
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/kyc:0.57.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8101/core/v1/kyc/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: 081397bd-7f41-42ff-8b04-5e8219fd6bd8
+    ports:
+    - 8101:8080
+    - 8501:8443
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  location:
+    container_name: location
+    deploy:
+      resources:
+        limits:
+          memory: 640MB
+    environment:
+      CERTIFICATE_KEYSTORE_PASSWORD: 8lN4vfyw
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/location:0.26.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_healthcheck: HTTP:8088/core/v1/location/health
+      vault_app_id: 1f7fa8be-d08f-4fb3-a4b3-5a261db9ad2d
+    ports:
+    - 8088:8080
+    - 8494:8443
+  mock-smtp:
+    container_name: mock-smtp
+    deploy:
+      resources:
+        limits:
+          memory: 732MB
+    environment:
+      _JAVA_OPTIONS: -Xms256m -Xmx385m
+      email.queue.size: 1000
+      server.port: 8090
+      smtp.port: 2525
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/mock-smtp:0.0.1-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.rewrite_private_registry
+    ports:
+    - 2525:2525
+    - 8094:8090
+  mockcybersource:
+    deploy:
+      resources:
+        limits:
+          memory: 61MB
+    environment: {}
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/mock-cybersource:3933efbb
+    labels:
+      cf_hook: composeformation.hooks.rewrite_private_registry
+      ecs_external_service: 'True'
+    ports:
+    - 8104:8081
+  order:
+    container_name: order
+    depends_on:
+    - orders-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      FINOPS_EMAIL_ADDRESSES: FinanceOpsWire@travelex.io;wireops@travelex.io;wire.support@travelex.io
+      FLAT_FEE: '8.95'
+      GUARANTEED_RATE_EXPIRY_PERIOD: '1800'
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      MAX_TRANSACTION_COUNT: '5'
+      MAX_TRANSACTION_COUNT_2: '10'
+      MAX_TRANSACTION_COUNT_PERIOD: '1'
+      MAX_TRANSACTION_COUNT_PERIOD_2: '30'
+      MAX_TRANSACTION_COUNT_PERIOD_UNIT: DAYS
+      MAX_TRANSACTION_COUNT_PERIOD_UNIT_2: DAYS
+      MAX_TRANSACTION_TOTAL_AMOUNT: '100000'
+      MAX_TRANSACTION_TOTAL_AMOUNT_PERIOD: '90'
+      MAX_TRANSACTION_TOTAL_AMOUNT_PERIOD_UNIT: DAYS
+      MIN_GUARANTEED_AMOUNT: '50'
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      SUSPEND_ORDER_PROCESSING: 'false'
+      TIERED_FEE: 'false'
+      USE_MOCK_GUARANTEED_RATE: 'true'
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+      WEEKEND_TRADING_ON: 'true'
+    external_links:
+    - active-mq
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/order:0.88.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_healthcheck: HTTP:8086/payments/v1/order/health
+      vault_app_id: 10ae0435-889b-47c4-90e1-a53ac9446ede
+    links:
+    - currency
+    - rate
+    - fund
+    - user
+    ports:
+    - 8086:8080
+    - 8486:8443
+  orders-migrations:
+    container_name: orders-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 190MB
+    environment:
+      DB_PORT_5432_TCP_PORT: '5432'
+      POSTGRES_DB: payments
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+      _JAVA_OPTIONS: -Xms128m -Xmx128m
+    external_links:
+    - payments-db
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/orders-migrations:0.88.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      vault_app_id: 70ad4bd2-a8b4-4825-a927-208a87f568ac
+  party:
+    container_name: party
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AF_RETRY_QUEUE_MAX_RETRIES: '3'
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      AWS: 'false'
+      BANK_CHECK_PARTNERS: ^US-SAM-.*$$
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      DUPLICATE_PARTNER_ID_REGEX: ''
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      JAVA_TOOL_OPTIONS: -Xms256m -Xmx256m
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      KYC_CHECK_PARTNERS: ^US-SAM-.*$$
+      PEP_CHECK_PARTNERS: ^US-SAM-.*$$
+      SANCTION_CHECK_PARTNERS: ^US-SAM-.*$$
+      URL_APPLY_FINANCIAL: http://localhost:8312
+      URL_SANCTION: http://sanction:8080
+      USE_AF_MOCK: 'true'
+      USE_MOCK_SERVICES: 'true'
+      USE_WIRE_MOCK: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/party:1.122.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8121/party/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: 5d2e496f-8a80-491b-97e5-ffb93a601452
+    ports:
+    - 8121:8080
+    - 8521:8443
+    - 9921:9921
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  payments:
+    container_name: payments
+    deploy:
+      resources:
+        limits:
+          memory: 896MB
+    environment:
+      DEV_CLUSTER: JENKINS
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/api-gateway:0.32.0
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_elb_port: '80'
+      ecs_external_service: 'True'
+      vault_app_id: 437e3af7-7101-454a-803e-14f915e4ee4f
+    links:
+    - audit
+    - bank
+    - beneficiary
+    - booking
+    - content
+    - country
+    - corridor
+    - currency
+    - customer
+    - duedil
+    - email
+    - fixedorder
+    - fund
+    - kyc
+    - location
+    - order
+    - rate
+    - reconciliation
+    - remittance
+    - sanction
+    - sender
+    - template
+    - user
+    - salesforceadapter
+    ports:
+    - 80:80
+    - 443:443
+    volumes:
+    - /proc:/proc-write:rw
+  quote:
+    container_name: quote
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      AWS: 'false'
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      ECS_ENVIRONMENT: local
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      JAVA_TOOL_OPTIONS: -Xms256m -Xmx256m
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/quote:1.8.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8128/quote/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: 683b0df5-96c1-4a9c-ab66-cb198942ab43
+    ports:
+    - 8128:8080
+    - 8528:8443
+    - 9928:9930
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  rate:
+    container_name: rate
+    depends_on:
+    - rate-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      APPLY_MARGIN: 'true'
+      AUTHENTICATION_AWS_COGNITO_PUBLIC_KEY_URL: https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_9RqcN2oJa/.well-known/jwks.json
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      AWS_REGION: eu-west-1
+      AWS_S3_ACCESS_KEY: accesskey
+      AWS_S3_BUCKET_NAME: local-upload-pricing-model-fees
+      AWS_S3_SECRET_KEY: secretkey
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      MARGIN_MULTIPLIER: '1.005'
+      RIA_RATES_URL: ''
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_S3: 'true'
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - active-mq
+    - elastic-mq
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/rate:0.140.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8087/payments/v1/rate/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: bd6285b5-f0fc-42b9-bfb1-40da1dcb7111
+    links:
+    - currency
+    ports:
+    - 8087:8080
+    - 8487:8443
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  rate-migrations:
+    container_name: rate-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 190MB
+    environment:
+      DB_PORT_5432_TCP_PORT: '5432'
+      POSTGRES_DB: payments
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+      _JAVA_OPTIONS: -Xms128m -Xmx128m
+    external_links:
+    - payments-db
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/rate-migrations:0.140.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      vault_app_id: 5f12ec9f-95dc-409e-b61c-e4eb563b8908
+  rate-refresh-pinger:
+    container_name: rate-refresh-pinger
+    deploy:
+      resources:
+        limits:
+          memory: 19MB
+    environment:
+      INTERVAL: '1800'
+      METHOD: POST
+      TARGET_URL: http://rate:8080/payments/v1/rate/private/refresh
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/pinger:0.6.0
+    labels:
+      cf_hook: composeformation.hooks.rewrite_private_registry
+      legacy_cpu_shares: 128
+    links:
+    - rate
+  reconciliation:
+    container_name: reconciliation
+    depends_on:
+    - reconciliation-migrations
+    deploy:
+      replicas: '1'
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      ACQUIRER_CUT_OFF_TIME: '23:59'
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      RECONCILIATION_REPORT_RECIPIENTS: FinanceOpsWire@travelex.io,WireOps@travelex.io
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - active-mq
+    - elastic-mq
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/reconciliation:0.33.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_desired_count: '1'
+      ecs_healthcheck: HTTP:8102/payments/v1/reconciliation/health
+      vault_app_id: e7d4bc32-b1d3-4bfa-bbb7-49d4200f24e6
+    ports:
+    - 8102:8080
+    - 8502:8443
+  reconciliation-fund-pinger:
+    container_name: reconciliation-fund-pinger
+    deploy:
+      resources:
+        limits:
+          memory: 19MB
+    environment:
+      METHOD: POST
+      TARGET_URL: http://reconciliation:8080/payments/v1/reconciliation/private/fund
+      TIME: '11:00:00'
+      TIMEZONE: Europe/London
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/pinger:0.6.0
+    labels:
+      cf_hook: composeformation.hooks.rewrite_private_registry
+      legacy_cpu_shares: 128
+    links:
+    - reconciliation
+  reconciliation-migrations:
+    container_name: reconciliation-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 190MB
+    environment:
+      DB_PORT_5432_TCP_PORT: '5432'
+      POSTGRES_DB: payments
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+      _JAVA_OPTIONS: -Xms128m -Xmx128m
+    external_links:
+    - payments-db
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/reconciliation-migrations:0.33.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      vault_app_id: 05a0a764-4371-4233-abb9-f1f6d5e6fba7
+  reconciliation-pinger:
+    container_name: reconciliation-pinger
+    deploy:
+      resources:
+        limits:
+          memory: 19MB
+    environment:
+      METHOD: POST
+      TARGET_URL: http://reconciliation:8080/payments/v1/reconciliation/private/reconciliation
+      TIME: '11:30:00'
+      TIMEZONE: Europe/London
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/pinger:0.6.0
+    labels:
+      cf_hook: composeformation.hooks.rewrite_private_registry
+      legacy_cpu_shares: 128
+    links:
+    - reconciliation
+  reconciliation-settlement-pinger:
+    container_name: reconciliation-settlement-pinger
+    deploy:
+      resources:
+        limits:
+          memory: 19MB
+    environment:
+      METHOD: POST
+      TARGET_URL: http://reconciliation:8080/payments/v1/reconciliation/private/settlement
+      TIME: '11:45:00'
+      TIMEZONE: Europe/London
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/pinger:0.6.0
+    labels:
+      cf_hook: composeformation.hooks.rewrite_private_registry
+      legacy_cpu_shares: 128
+    links:
+    - reconciliation
+  remittance:
+    container_name: remittance
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/remittance:0.35.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_healthcheck: HTTP:8108/core/v1/remittance/health
+      vault_app_id: 9a7ee263-bc9f-4c38-90f2-dc7f263be069
+    ports:
+    - 8108:8080
+    - 8508:8443
+  salesforceadapter:
+    container_name: salesforceadapter
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/salesforceadapter:0.37.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8124/v2/salesforceadapter/health
+      ecs_healthy_threshold: '2'
+      legacy_cpu_shares: 512
+      vault_app_id: 28b51b34-f910-4c79-95af-c8f817c357c5
+    ports:
+    - 8124:8080
+    - 8524:8443
+    - 9924:9930
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  sanction:
+    container_name: sanction
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      AWS: 'false'
+      BANK_CHECK_PARTNERS: US-SAM
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      DUEDIL_PARTNERS: US-SAM,AU-NPC,AU-IMB,US-WBK,GB-TX
+      ECS_ENVIRONMENT: local
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_PARTY_PEP_SANCTION_QUEUE: local-party-pep-sanction-queue
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      JAVA_TOOL_OPTIONS: -Xms256m -Xmx256m
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      MIGRATED_PARTNERS: US-WBK,GB-TX
+      PRIME_PARTNERS: US-WBK-PING,GB-TX-PING
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      USE_WIRE_MOCK: 'false'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/sanction:0.86.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8100/core/v1/sanction/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: 12004879-087a-4d87-b86c-54c17963717a
+    ports:
+    - 8100:8080
+    - 8498:8443
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  scheduler:
+    container_name: scheduler
+    deploy:
+      replicas: '2'
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      CNR_UPLOAD_TO_TALEND: 'false'
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      REFRESH_XM_STORE: 'false'
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/scheduler:0.22.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_desired_count: '2'
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8109/v1/scheduler/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: df049a70-78bd-4652-8016-3b39cd2008c5
+    ports:
+    - 8109:8080
+    - 8472:8443
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  sender:
+    container_name: sender
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AUTHENTICATION_AWS_COGNITO_PUBLIC_KEY_URL: https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_9RqcN2oJa/.well-known/jwks.json
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      AWS: 'false'
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      USE_WIRE_MOCK: 'false'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - active-mq
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/sender:0.52.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_healthcheck: HTTP:8105/core/v1/sender/health
+      vault_app_id: VAULT_ID
+    ports:
+    - 8105:8080
+    - 8505:8443
+  sms:
+    container_name: sms
+    deploy:
+      resources:
+        limits:
+          memory: 640MB
+    environment:
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - active-mq
+    - elastic-mq
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/sms:0.27.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8090/core/v1/sms/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: bdb93ff6-8430-4942-8ae0-c0d9ec53960d
+    ports:
+    - 8090:8080
+    - 8489:8443
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  store:
+    container_name: store
+    deploy:
+      resources:
+        limits:
+          memory: 3000MB
+    environment:
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      AWS: 'false'
+      CORRIDOR_URL: http://corridor:8080/v1/corridor/
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      ECS_ENVIRONMENT: local
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      INVALID_STORE_RECEIVERS: kingscrosstesting@gmail.com
+      INVALID_STORE_SENDER: no-reply@travelex.com
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      RIA_FTP_USE_MOCK: 'true'
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      USE_SFTP_MOCK: 'true'
+      USE_WIRE_MOCK: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+      XM_FTP_USE_MOCK: 'true'
+    external_links:
+    - elastic-mq
+    - payments-db
+    - vault
+    - s3
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/store:0.49.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8123/store/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: ecdd4786-ba5c-464f-92c1-90b9d700fc8a
+    ports:
+    - 8123:8080
+    - 8523:8443
+    - 9923:9923
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  template:
+    container_name: template
+    deploy:
+      resources:
+        limits:
+          memory: 640MB
+    environment:
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - active-mq
+    - elastic-mq
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/template:0.49.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8096/core/v1/template/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: 3161eb34-fb68-484d-a123-aec6058b0ead
+    links:
+    - content
+    - user
+    ports:
+    - 8096:8080
+    - 8496:8443
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  token:
+    container_name: token
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      ECS_ENVIRONMENT: local
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      JAVA_TOOL_OPTIONS: -Xms256m -Xmx256m
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      TOKEN_JWKS_PRIMARY_PRIVATE_KEY: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVBdW5temtQWlBwZDRkK3JncE9GVW95TEtXV1pzTVJQVGhEeDdPREhPbkVvL2IyK3FXCmxISHZTVGFSelljWE9IQXdFdFV2Z2xtNCtSNUliYUd5N0ZUMThkM1dYU3FVelNtdGIzWVkwMmpkcSsxVWNNMGsKY1hNMGZVVEZXeUFneURLSmhhVStxbURZK0h5aFJGcVkrejNYYmhaR3ovK1Z4ZmtnSkNSV1Z3bTYxYVVQb21LMgpQcVYwVStxL2dtT21MOEF1cmtwTG1aY0ZCcjNqVGdFTmwyTERmWExVcUlmc1RMa2JLTWx2c3E0MkNuSDFKbXcxCjJnOGVBZTVjS2N5M2ZZck9teTlQNEYrZzVqbGwxVnVVQktoWVNrdVhSKy8wbzBGUjhBWW45Q2RGTmJGK3FUMTAKMUtPNGxJS0RkTzdQVG9lUDUwOVVDN1UyRXJjaTRma0NLVDFmU3dJREFRQUJBb0lCQVFDZDlDSzNZdnlhZW1nWQpqTkJWcUVUd285MlpMeTJZWjNrUURyN29henFWRFlobFl2T0Q4SEtKS0pFZWNCU3FPTlZ2em1iODJqVkZ4M0lBCmMxeVV0VzdUSGw3SzhodXpJVitJcjVkZDFGRVlwZUxGM2U3RnJwbENsdk01T2lDcWs2eExxV3BJZGRxenVSWDkKU1dTV1JJN3I4REN4VlVTdnVsT1FhYnM4NUwvKzRPMFBiOEtCRlhMaUNjd1ZVM1dGNmhQUm9ZNllQMXdqMDlOZgp5eHBSenlDK1oyYzJSRGRWNlV6K2RHd3UrdDMzejljdXNLRnY5RWtMV1dWMzZzOGwvOWY4ckJWYUF4Wk5aekpMCkhHOGd1OStLTVE3WTNSN3NLZmdtbnNydXIwSll4RnJqQlREa0JHVnNNRmRac2w3Vk5CNUdUTkp0Q3BnZnFYZEMKblR4UWNHWVpBb0dCQU55K1lwUEdXSEV0SmVGVUx0Qmt3dFU0YUR1cnZjVEozdDVydDAxenJEMHAveXR5bHNaTgplS3V5djV1ZTFCeGo1SFRCMlc0Y3VMaXNNYVJFSW5kVlZoVkVQOUZqVEkrZFFvaXR0UUpnaFFIVFlJRkdlWUFuCk5QMytxUWJaVWlGS1BydHAxVGNQajdNN3Z1ZmxZMVJNNFYzS3RZbVFZbEVxQVQrd2tPUy9XbElmQW9HQkFOaEMKTFpZUU5hUW0wUTBPWUFYWDUxNFZJLzRFMEhSM2xkb0F5QzRITXFROUVSWXRtalJWY0RUcUNQTUU0ZmU3K0RaaApRMTFNVWI5WEFnZlFSQ2tEUFcwT3o1S3RhM1c5aVhUbzV4Mk10MCswSnU4cThZK1VveWtUYngzSmM3VXNkQzRWCi8vaG9KVEUwVG5DaHZSYkRUbDN0dHdCc1o4aWR1RHNCWTU1MXFvVlZBb0dBRWtKWlN4bjBCT0NVS3BCWkV2blMKdCtwampOUUc3WGs1U3pLanhlOVVodmFyV2Irdnd4VnpidGhwU3drWFNJWG14dFdtRTVxaW1QdjlXellibDcxaQpVbjREdldFMld3YktFeDR6UTlBU0VIV1luUGprWWZwY1FzcEcxdjh3OFBvQU9HWm5zWmRDN3JONWRoc2VYVUhDCnZveGUrZE1NbnVRWG1Gb1ZraVpWNVVjQ2dZQXBHSHBkTi90WmxGN0pvbCt3L0pSbEZwTmVaRC9Rd2lEaDZxQWYKenhKYWo1ZzlwTERYSFIxVGtOM2VnS0VJV05vVVMydG53V2NQZTFOUmRNeGZGdFNIY3ZjVElvMTNOR3Q0b2dHNQpaZEkzL1Q0ZzJRSktqSzVzMGRxZHlIaUtoMFlVcysyT29RdmdTOVpVSlFndjJURjlPLzA0d1dEL2lLbEgzVDIzCkVSazBlUUtCZ0JQRHBxR1dvL3d5V0gvTEx0N0F6K1J2eTJCWDBIekVsWnkyR3cxV08wd3cxQ2NtT0g5WHJoT2wKekF2U0NkNHhKZVdhbnRzNWNFM01oTVFKaXhJVzV3bmthYSswRjFaVzRENk9Db2RqNVdvdUdEMVhOdjVNejRTTwpIR1lTQTFHV01Ga3p6dk5kYm5HMHNLYTBEellocktOalFqbVh5YzdHNDR5Z0NrWDNuZXdJCi0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg==
+      TOKEN_JWKS_PRIMARY_PUBLIC_KEY: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVRRENDQWlnQ0JoSmRIQkNETnpBTkJna3Foa2lHOXcwQkFRc0ZBREJZTVFzd0NRWURWUVFHRXdKSFFqRVAKTUEwR0ExVUVDQXdHVEc5dVpHOXVNUTh3RFFZRFZRUUhEQVpNYjI1a2IyNHhGVEFUQmdOVkJBb01ERlJ5WVhabApiR1Y0SUV4MFpERVFNQTRHQTFVRUN3d0hSR2xuYVhSaGJEQWdGdzB4T1RFeE1USXdPREkzTVRGYUdBOHlNVEU1Ck1UQXhPVEE0TWpjeE1Wb3diVEVMTUFrR0ExVUVCaE1DUjBJeER6QU5CZ05WQkFnTUJreHZibVJ2YmpFUE1BMEcKQTFVRUJ3d0dURzl1Wkc5dU1SVXdFd1lEVlFRS0RBeFVjbUYyWld4bGVDQk1kR1F4RURBT0JnTlZCQXNNQjBScApaMmwwWVd3eEV6QVJCZ05WQkFNTUNsUnZhMlZ1SUVwWFMxTXdnZ0VpTUEwR0NTcUdTSWIzRFFFQkFRVUFBNElCCkR3QXdnZ0VLQW9JQkFRQzZlYk9ROWsrbDNoMzZ1Q2s0VlNqSXNwWlptd3hFOU9FUEhzNE1jNmNTajl2YjZwYVUKY2U5Sk5wSE5oeGM0Y0RBUzFTK0NXYmo1SGtodG9iTHNWUFh4M2RaZEtwVE5LYTF2ZGhqVGFOMnI3VlJ3elNSeApjelI5Uk1WYklDRElNb21GcFQ2cVlOajRmS0ZFV3BqN1BkZHVGa2JQLzVYRitTQWtKRlpYQ2JyVnBRK2lZclkrCnBYUlQ2citDWTZZdndDNnVTa3VabHdVR3ZlTk9BUTJYWXNOOWN0U29oK3hNdVJzb3lXK3lyallLY2ZVbWJEWGEKRHg0Qjdsd3B6TGQ5aXM2YkwwL2dYNkRtT1dYVlc1UUVxRmhLUzVkSDcvU2pRVkh3QmlmMEowVTFzWDZwUFhUVQpvN2lVZ29OMDdzOU9oNC9uVDFRTHRUWVN0eUxoK1FJcFBWOUxBZ01CQUFFd0RRWUpLb1pJaHZjTkFRRUxCUUFECmdnSUJBQnZLdzhmcUIyazRwREVPZCtoV2RHbThpQWtRVlNINGdFaFVaU2ZWQ01SNENmTU1KeUdld1l2eWU3S0MKS2tEQTVhKy9wWXgvY1JaL3ZXWS83WUVMR3RzYzgrbDVmV2VVQWJBVE41VkNMTTE4c1RORG1VZ0J6MFhMaGxBdAo5czFtQXN1MWVZMDF0bWhtU3NoNnRsS1JsVDlYdkRSeUxHaHoyRm5Uby90MWFIWS82Um5ZdmVyZ1hNeURuSjNLClVwdTFiTkxBbUtpVlBvSFBteWFlcy82TDZmS1o3UERGdUQvR3N0eloxdlY3UExKeUJxWkVxKzZMSGJmcmN6S0YKcE1WRmNLOE92K3NpMWRuTUlFOUFzREVidU0wNmxzVVJnVG56MEZjR2RMbE10L0xVUVliYlRMMTVXTnRSR09DdApBYVZva1FwUjJNN3lBbFFyTHNFZkRmOW9rc01pK1hFZzQxWTBVRnU5QTlHUmZTOUhNTDM3UjFHaHYwMTRoZ3NVCnVrODdObTlLTHVlc1Fac21XNjdreGVFeElYc01uZC94emE0WlF5SUtaeDQwS3ErZmdmVENFMCtOc2JEdU1Fd24KQ0kyeTRJbEk0OW9ZZFk1R3JwbFJEZW4wMTYydUMrS1lRODhQQ0JNM3ZLK0s0OVFYWFo0NGZlZWxIN3hSS21hTwphcWJVM3J3N2l0NlRyRXNhb3RSNkRMd2k0TlNJZjlzWVQxa1QzN1c2N0FvdmszQk5qZUJFU3B4d2NmZjhwSnh1CjdMWExwaEpzT1RXTUxHV2ZjTEp4S2p5TDlXaE1CMHJ3SXQ2ZEIwallLWlowOFdaRk1STk5EeHM2bzdBVVVNak8KMXFEZ3kzNTRjMVRNejlPUUN5NUlFTnRmQUd1MFpIREVkZElBd3FJVXRSTXgrbVNYCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/token:0.4.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      create_aws_iam_role: true
+      ecs_healthcheck: HTTP:8118/v2/health
+      secret.token_jwks_backup_private_key: token-jwks-backup-private-key
+      secret.token_jwks_backup_public_key: token-jwks-backup-public-key
+      secret.token_jwks_primary_private_key: token-jwks-primary-private-key
+      secret.token_jwks_primary_public_key: token-jwks-primary-public-key
+      vault_app_id: f58c6942-c1d6-4a05-8976-f93d05bb1ad4
+    ports:
+    - 8118:8080
+    - 8666:8443
+  transfer:
+    container_name: transfer
+    deploy:
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      AWS: 'false'
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      DODD_FRANK_PERIOD: '10'
+      ECS_ENVIRONMENT: local
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      FRAUD_CHECK_ENABLED: 'true'
+      FRAUD_CHECK_RESPONSE_ENABLED: 'false'
+      JAVA_TOOL_OPTIONS: -Xms256m -Xmx256m
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      TRANSFER_CACHE_PARTY_ENABLED: 'false'
+      TRANSFER_CACHE_PAYMENT_DETAILS_ENABLED: 'true'
+      TRANSFER_CACHE_QUOTE_ENABLED: 'false'
+      TRANSFER_REPOSITORY_QUOTE_SERVICE_BACKING: 'true'
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - elastic-mq
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/transfer:1.105.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8122/transfer/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: 24a4d56d-2e52-4db9-9823-742f0654ca03
+    ports:
+    - 8122:8080
+    - 8522:8443
+    - 9922:9922
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  user:
+    container_name: user
+    depends_on:
+    - users-migrations
+    deploy:
+      replicas: '5'
+      resources:
+        limits:
+          memory: 1000MB
+    environment:
+      AUTHENTICATION_AWS_COGNITO_PUBLIC_KEY_URL: https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_9RqcN2oJa/.well-known/jwks.json
+      AUTH_COOKIE_DOMAIN: .digital.travelex.net
+      DD_JMXFETCH_ENABLED: 'false'
+      DD_TRACE_ENABLED: 'false'
+      EMAIL_FAQ_LINK: https://help.wire.travelex.co.uk/
+      EMAIL_PRIVACY_POLICY_LINK: https://wire.travelex.co.uk/privacy-policy
+      EMAIL_TERMS_AND_CONDITIONS_LINK: https://wire.travelex.co.uk/terms-and-conditions
+      EVENTS_EXTERNAL_STORAGE_ENABLED: 'false'
+      EVENT_FAILURE_QUEUE: local-event-failure-queue
+      EVENT_QUEUE_AUDIT_QUEUE: local-event-queue-audit-queue
+      EVENT_QUEUE_BANK_REQUEST_FAIL_QUEUE: local-event-queue-bank-request-fail-queue
+      EVENT_QUEUE_BANK_REQUEST_QUEUE: local-event-queue-bank-request-queue
+      EVENT_QUEUE_BANK_REQUEST_SUCCESS_QUEUE: local-event-queue-bank-request-success-queue
+      EVENT_QUEUE_BENEFICIARY_PEP_SANCTION_QUEUE: local-event-queue-beneficiary-pep-sanction-queue
+      EVENT_QUEUE_BOOKING: local-event-queue-booking
+      EVENT_QUEUE_CUSTOMER_PEP_SANCTION_QUEUE: local-event-queue-customer-pep-sanction-queue
+      EVENT_QUEUE_EMAIL_FAIL_QUEUE: local-event-queue-email-fail-queue
+      EVENT_QUEUE_EMAIL_QUEUE: local-event-queue-email-queue
+      EVENT_QUEUE_EMAIL_SUCCESS_QUEUE: local-event-queue-email-success-queue
+      EVENT_QUEUE_FIXED_ORDER_STATUS_UPDATE: local-event-queue-fixed-order-status-update
+      EVENT_QUEUE_FUND_QUEUE: local-event-queue-fund-queue
+      EVENT_QUEUE_FUND_REVIEW_UPDATE: local-fund-review-update-queue
+      EVENT_QUEUE_KYC_STATUS_UPDATE: local-event-queue-kyc-status-update-queue
+      EVENT_QUEUE_MARKETING: local-event-queue-marketing
+      EVENT_QUEUE_ORDER_STATUS_UPDATE: local-event-queue-order-status-update
+      EVENT_QUEUE_RECONCILIATION_QUEUE: local-event-queue-reconciliation-queue
+      EVENT_QUEUE_SENDER_PEP_SANCTION_QUEUE: local-event-queue-sender-pep-sanction-queue
+      EVENT_QUEUE_SMS_FAIL_QUEUE: local-event-queue-sms-fail-queue
+      EVENT_QUEUE_SMS_QUEUE: local-event-queue-sms-queue
+      EVENT_QUEUE_SMS_SUCCESS_QUEUE: local-event-queue-sms-success-queue
+      EVENT_QUEUE_TEMPLATE_QUEUE: local-event-queue-template-queue
+      EVENT_QUEUE_TICKET_QUEUE: local-event-queue-ticket-queue
+      JETTY_MAX_THREADS: '20'
+      JETTY_MIN_THREADS: '2'
+      JMS_IMPLEMENTATION: localActivemq
+      JMS_QUEUE_URL: tcp://active-mq:61616
+      JMS_RECEIVER_CONNECTOR_TIMEOUT: '10000'
+      JMS_SEND_MAX_TRIES: '5'
+      JVM_DEBUG: '1'
+      JVM_MAX_HEAP: 128m
+      JVM_MIN_HEAP: 128m
+      S3_AWS_BUCKET_NAME: ''
+      SQS_ENDPOINT_URL: http://elastic-mq:9324
+      USE_MOCK_PASSWORD_MANAGEMENT_SERVICE: 'true'
+      USE_MOCK_SERVICES: 'true'
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+    external_links:
+    - active-mq
+    - payments-db
+    - vault
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/user:0.117.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      ecs_desired_count: '5'
+      ecs_grace_period: '180'
+      ecs_healthcheck: HTTP:8097/core/v1/user/health
+      ecs_healthy_threshold: '2'
+      vault_app_id: e110b5e5-257a-4d02-8d81-fa50aafe7fe8
+    links:
+    - content
+    ports:
+    - 8097:8080
+    - 8497:8443
+    volumes:
+    - /var/run/datadog:/var/run/datadog:ro
+  users-migrations:
+    container_name: users-migrations
+    deploy:
+      resources:
+        limits:
+          memory: 286MB
+    environment:
+      DB_PORT_5432_TCP_PORT: '5432'
+      POSTGRES_DB: payments
+      VAULT_SECRET_ID: dummy-userid
+      VAULT_USER_ID: dummy-userid
+      _JAVA_OPTIONS: -Xms128m -Xmx128m
+    external_links:
+    - payments-db
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/users-migrations:0.117.0-SNAPSHOT
+    labels:
+      cf_hook: composeformation.hooks.all
+      vault_app_id: 1e5383c0-5512-4c4d-94e1-bd0fcf283a54
+  vault:
+    container_name: vault
+    deploy:
+      resources:
+        limits:
+          memory: 143MB
+    dns: 127.0.0.11
+    environment:
+      DEV_DUMMY_USERID: dummy-userid
+      DEV_UNSEAL_ON_RESTART: 'true'
+      VAULT_ADDR: https://127.0.0.1:8200
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/vault-aio:b9eaa42
+    labels:
+      legacy_cpu_shares: 4096
+    links:
+    - payments-db
+    ports:
+    - 8200:8200
+  wiremock-standalone:
+    container_name: wiremock-standalone
+    deploy:
+      resources:
+        limits:
+          memory: 953MB
+    environment: {}
+    image: 538498659860.dkr.ecr.eu-west-1.amazonaws.com/travelex/wiremock-standalone:0.3.0
+    ports:
+    - 8989:8989
+version: '3.7'
+x-sqs:
+- publishing_services:
+  - country
+  - currency
+  queue_name: audit
+  subscribing_service: audit
+- publishing_services:
+  - ticket
+  queue_name: audit-history
+  subscribing_service: audit
+- publishing_services: []
+  queue_name: template
+  subscribing_service: template
+- publishing_services: []
+  queue_name: email
+  subscribing_service: email
+- publishing_services:
+  - email
+  queue_name: email-success
+  subscribing_service: email
+- publishing_services:
+  - email
+  queue_name: email-failure
+  subscribing_service: email
+- publishing_services:
+  - bank
+  - fund
+  queue_name: event-failure
+  subscribing_service: audit
+- publishing_services:
+  - customer
+  queue_name: fund
+  subscribing_service: fund
+- publishing_services: []
+  queue_name: sms
+  subscribing_service: sms
+- publishing_services:
+  - sms
+  queue_name: sms-success
+  subscribing_service: sms
+- publishing_services:
+  - sms
+  queue_name: sms-failure
+  subscribing_service: sms
+- publishing_services: []
+  queue_name: bank
+  subscribing_service: bank
+- publishing_services:
+  - bank
+  queue_name: bank-success
+  subscribing_service: bank
+- publishing_services:
+  - bank
+  queue_name: bank-failure
+  subscribing_service: bank
+- publishing_services: []
+  queue_name: kyc
+  subscribing_service: kyc
+- publishing_services: []
+  queue_name: customer-pep-sanction
+  subscribing_service: customer-sanction
+- publishing_services: []
+  queue_name: beneficiary-pep-sanction
+  subscribing_service: beneficiary
+- publishing_services: []
+  queue_name: sender-pep-sanction
+  subscribing_service: sender
+- publishing_services: []
+  queue_name: ticket
+  subscribing_service: ticket
+- publishing_services:
+  - rate
+  - fund
+  - order
+  queue_name: reconciliation
+  subscribing_service: reconciliation
+- publishing_services: []
+  queue_name: order-status-update
+  subscribing_service: order
+- publishing_services:
+  - beneficiary
+  - customer
+  queue_name: fixedorder-status-update
+  subscribing_service: fixedorder
+  subscription_to_sns:
+  - filter_policy: '{"partnerId": ["US-WBK-20170314-LPVRMC-1"]}'
+    sns_name: booking-response
+- fifo: true
+  queue_name: marketing
+  subscribing_service: marketing
+- message_retention_period: 1209600
+  publishing_services: []
+  queue_name: booking
+  subscribing_service: booking
+  visibility_timeout: 120
+- publishing_services: []
+  queue_name: transfer
+  subscribing_service: transfer
+  visibility_timeout: 120
+- publishing_services: []
+  queue_name: customer
+  subscribing_service: customer
+  visibility_timeout: 120
+- publishing_services: []
+  queue_name: beneficiary
+  subscribing_service: beneficiary
+  visibility_timeout: 120
+- maximum_message_size: 262144
+  message_retention_period: 604800
+  publishing_services: []
+  queue_name: cc-booking
+  subscribing_service: cc-booking
+  visibility_timeout: 120
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: []
+  queue_name: kyc-pending-check
+  subscribing_service: kyc-pending-check
+  visibility_timeout: 120
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: []
+  queue_name: party-kyc-result
+  subscribing_service: party-kyc-result
+  visibility_timeout: 120
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: []
+  queue_name: hook-events
+  subscribing_service: hook-events
+  visibility_timeout: 120
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: []
+  queue_name: hook-endpoint-events
+  subscribing_service: hook-endpoint-events
+  visibility_timeout: 120
+- content_based_deduplication: true
+  fifo: true
+  maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services:
+  - hook
+  queue_name: hook-first-attempt-endpoint-events
+  subscribing_service: hook
+  visibility_timeout: 30
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services:
+  - hook
+  queue_name: hook-retry-endpoint-events
+  redrive_policy_max_receive_count: 100
+  subscribing_service: hook
+  visibility_timeout: 30
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: []
+  queue_name: transfer-booking-response
+  subscribing_service: transfer
+  subscription_to_sns:
+  - filter_policy: '{"partnerId": ["US-SAM-20180702-SAJN00-1"]}'
+    sns_name: booking-response
+  visibility_timeout: 120
+- maximum_message_size: 262144
+  message_retention_period: 1209600
+  publishing_service: []
+  queue_name: booking-status-update
+  subscribing_service: booking
+  visibility_timeout: 120
+- maximum_message_size: 262144
+  message_retention_period: 1209600
+  publishing_service: []
+  queue_name: booking-unbookable-window
+  subscribing_service: booking
+  visibility_timeout: 120
+- publishing_services: []
+  queue_name: party-pep-sanction
+  subscribing_service: party
+- publishing_services: []
+  queue_name: fraud
+  subscribing_service: fraud
+- content_based_deduplication: true
+  fifo: true
+  maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: []
+  queue_name: salesforce-adapter
+  redrive_policy_max_receive_count: 1000
+  subscribing_service: salesforce-adapter
+  visibility_timeout: 300
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: []
+  queue_name: transfer-document-update-queue
+  subscribing_service: transfer
+  visibility_timeout: 120
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: []
+  queue_name: transfer-party-update-queue
+  subscribing_service: transfer
+  visibility_timeout: 120
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: []
+  queue_name: document-update
+  subscribing_service: party
+  visibility_timeout: 2
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services:
+  - fund
+  queue_name: fund-review-update
+  subscribing_service: transfer
+  visibility_timeout: 120
+- publishing_services: party
+  queue_name: fraud-party
+  subscribing_service: fraud
+  visibility_timeout: 120
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: fraud
+  queue_name: transfer-fraud
+  subscribing_service: transfer
+  visibility_timeout: 120
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: transfer
+  queue_name: fraud-transfer
+  subscribing_service: fraud
+  visibility_timeout: 120
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: fraud
+  queue_name: party-fraud
+  subscribing_service: party
+  visibility_timeout: 120
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: party
+  queue_name: party-apply-financial-retry
+  subscribing_service: party
+  visibility_timeout: 120
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: document
+  queue_name: document-upload-retry
+  subscribing_service: document
+  visibility_timeout: 120
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: sanction
+  queue_name: sanction-check-retry
+  subscribing_service: sanction
+  visibility_timeout: 120
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: fraud
+  queue_name: fraud-sync-request
+  subscribing_service: fraud
+  visibility_timeout: 120
+- content_based_deduplication: true
+  fifo: true
+  maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: fraud
+  queue_name: fraud-ingest
+  redrive_policy_max_receive_count: 1000
+  subscribing_service: fraud
+  visibility_timeout: 30
+- queue_name: fixedorder-booking-response
+  subscribing_service: fixedorder
+- maximum_message_size: 262144
+  message_retention_period: 345600
+  publishing_services: []
+  queue_name: dsar-events
+  subscribing_service: dsar
+  visibility_timeout: 120
